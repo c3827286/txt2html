@@ -1,0 +1,335 @@
+// MainFrm.cpp : implementation of the CMainFrame class
+//
+
+#include "stdafx.h"
+#include "Txt2Html.h"
+
+#include "MainFrm.h"
+#include "LeftView.h"
+#include "Txt2HtmlView.h"
+#include "ConvertDlg.h"
+#include "TxtToHtml.h"
+#include "LogView.h"
+#include "ConvertDirDlg.h"
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// CMainFrame
+
+IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
+
+BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
+	//{{AFX_MSG_MAP(CMainFrame)
+	ON_WM_CREATE()
+	ON_COMMAND(ID_CONVERTFILE, OnConvertFile)
+	ON_COMMAND(ID_FONTSET, OnFontset)
+	ON_COMMAND(ID_BGCOLOR, OnBgcolor)
+	ON_COMMAND(ID_CONVERTDIR, OnConvertdir)
+	//}}AFX_MSG_MAP
+	ON_UPDATE_COMMAND_UI_RANGE(AFX_ID_VIEW_MINIMUM, AFX_ID_VIEW_MAXIMUM, OnUpdateViewStyles)
+	ON_COMMAND_RANGE(AFX_ID_VIEW_MINIMUM, AFX_ID_VIEW_MAXIMUM, OnViewStyle)
+END_MESSAGE_MAP()
+
+static UINT indicators[] =
+{
+	ID_SEPARATOR,           // status line indicator
+	ID_INDICATOR_CAPS,
+	ID_INDICATOR_NUM,
+	ID_INDICATOR_SCRL,
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// CMainFrame construction/destruction
+
+CMainFrame::CMainFrame()
+{
+	// TODO: add member initialization code here
+	
+}
+
+CMainFrame::~CMainFrame()
+{
+}
+
+int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
+		return -1;
+	
+	if (!m_wndToolBar.CreateEx(this) ||
+		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
+	{
+		TRACE0("Failed to create toolbar\n");
+		return -1;      // fail to create
+	}
+	if (!m_wndDlgBar.Create(this, IDR_MAINFRAME, 
+		CBRS_ALIGN_TOP, AFX_IDW_DIALOGBAR))
+	{
+		TRACE0("Failed to create dialogbar\n");
+		return -1;		// fail to create
+	}
+
+	if (!m_wndReBar.Create(this) ||
+		!m_wndReBar.AddBar(&m_wndToolBar) ||
+		!m_wndReBar.AddBar(&m_wndDlgBar))
+	{
+		TRACE0("Failed to create rebar\n");
+		return -1;      // fail to create
+	}
+
+	if (!m_wndStatusBar.Create(this) ||
+		!m_wndStatusBar.SetIndicators(indicators,
+		  sizeof(indicators)/sizeof(UINT)))
+	{
+		TRACE0("Failed to create status bar\n");
+		return -1;      // fail to create
+	}
+
+	// TODO: Remove this if you don't want tool tips
+	m_wndToolBar.SetBarStyle(m_wndToolBar.GetBarStyle() |
+		CBRS_TOOLTIPS | CBRS_FLYBY);
+
+	return 0;
+}
+
+BOOL CMainFrame::OnCreateClient(LPCREATESTRUCT /*lpcs*/,
+	CCreateContext* pContext)
+{
+	// create splitter window
+	if (!m_wndSplitter.CreateStatic(this, 1, 2))
+		return FALSE;
+
+	if (!m_wndSplitter.CreateView(0, 0, RUNTIME_CLASS(CLeftView), CSize(100, 100), pContext)		
+		||!m_wndSplitter.CreateView(0, 1, RUNTIME_CLASS(CFrameWnd), CSize(1, 1), pContext)
+		//||!m_wndSplitter.CreateView(0, 1, RUNTIME_CLASS(CTxt2HtmlView), CSize(100, 100), pContext)
+		)
+	{
+		m_wndSplitter.DestroyWindow();
+		return FALSE;
+	}else
+	{
+		CWnd* pWnd = m_wndSplitter.GetPane(0, 1);
+		CFrameWnd* pFrameWnd = DYNAMIC_DOWNCAST(CFrameWnd, pWnd);
+		pFrameWnd->ModifyStyle(WS_EX_STATICEDGE,0,0);//WS_BORDER,WS_THICKFRAME
+
+
+		if (!m_wndRSplitter.CreateStatic(pFrameWnd, 2, 1))
+		{
+			m_wndSplitter.DeleteView(0,1);
+			m_wndSplitter.DeleteView(0,0);
+			m_wndSplitter.DestroyWindow();
+			return FALSE;
+		}
+
+		if (!m_wndRSplitter.CreateView(0, 0, RUNTIME_CLASS(CTxt2HtmlView), CSize(100, 300), pContext)		
+			||!m_wndRSplitter.CreateView(1, 0, RUNTIME_CLASS(CLogView), CSize(100, 100), pContext)
+		)
+		{
+			m_wndRSplitter.DestroyWindow();
+
+			m_wndSplitter.DeleteView(0,1);
+			m_wndSplitter.DeleteView(0,0);
+			m_wndSplitter.DestroyWindow();
+			
+			return FALSE;
+		}
+
+	}
+
+	return TRUE;
+}
+
+BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
+{
+	if( !CFrameWnd::PreCreateWindow(cs) )
+		return FALSE;
+	// TODO: Modify the Window class or styles here by modifying
+	//  the CREATESTRUCT cs
+
+	return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CMainFrame diagnostics
+
+#ifdef _DEBUG
+void CMainFrame::AssertValid() const
+{
+	CFrameWnd::AssertValid();
+}
+
+void CMainFrame::Dump(CDumpContext& dc) const
+{
+	CFrameWnd::Dump(dc);
+}
+
+#endif //_DEBUG
+
+/////////////////////////////////////////////////////////////////////////////
+// CMainFrame message handlers
+
+CTxt2HtmlView* CMainFrame::GetRightPane()
+{
+	CWnd* pWnd = m_wndSplitter.GetPane(0, 1);
+	CTxt2HtmlView* pView = DYNAMIC_DOWNCAST(CTxt2HtmlView, pWnd);
+	return pView;
+}
+
+void CMainFrame::OnUpdateViewStyles(CCmdUI* pCmdUI)
+{
+	// TODO: customize or extend this code to handle choices on the
+	// View menu.
+
+	CTxt2HtmlView* pView = GetRightPane(); 
+
+	// if the right-hand pane hasn't been created or isn't a view,
+	// disable commands in our range
+
+	if (pView == NULL)
+		pCmdUI->Enable(FALSE);
+	else
+	{
+		DWORD dwStyle = pView->GetStyle() & LVS_TYPEMASK;
+
+		// if the command is ID_VIEW_LINEUP, only enable command
+		// when we're in LVS_ICON or LVS_SMALLICON mode
+
+		if (pCmdUI->m_nID == ID_VIEW_LINEUP)
+		{
+			if (dwStyle == LVS_ICON || dwStyle == LVS_SMALLICON)
+				pCmdUI->Enable();
+			else
+				pCmdUI->Enable(FALSE);
+		}
+		else
+		{
+			// otherwise, use dots to reflect the style of the view
+			pCmdUI->Enable();
+			BOOL bChecked = FALSE;
+
+			switch (pCmdUI->m_nID)
+			{
+			case ID_VIEW_DETAILS:
+				bChecked = (dwStyle == LVS_REPORT);
+				break;
+
+			case ID_VIEW_SMALLICON:
+				bChecked = (dwStyle == LVS_SMALLICON);
+				break;
+
+			case ID_VIEW_LARGEICON:
+				bChecked = (dwStyle == LVS_ICON);
+				break;
+
+			case ID_VIEW_LIST:
+				bChecked = (dwStyle == LVS_LIST);
+				break;
+
+			default:
+				bChecked = FALSE;
+				break;
+			}
+
+			pCmdUI->SetRadio(bChecked ? 1 : 0);
+		}
+	}
+}
+
+
+void CMainFrame::OnViewStyle(UINT nCommandID)
+{
+	// TODO: customize or extend this code to handle choices on the
+	// View menu.
+	CTxt2HtmlView* pView = GetRightPane();
+
+	// if the right-hand pane has been created and is a CTxt2HtmlView,
+	// process the menu commands...
+	if (pView != NULL)
+	{
+		DWORD dwStyle = -1;
+
+		switch (nCommandID)
+		{
+		case ID_VIEW_LINEUP:
+			{
+				// ask the list control to snap to grid
+				CListCtrl& refListCtrl = pView->GetListCtrl();
+				refListCtrl.Arrange(LVA_SNAPTOGRID);
+			}
+			break;
+
+		// other commands change the style on the list control
+		case ID_VIEW_DETAILS:
+			dwStyle = LVS_REPORT;
+			break;
+
+		case ID_VIEW_SMALLICON:
+			dwStyle = LVS_SMALLICON;
+			break;
+
+		case ID_VIEW_LARGEICON:
+			dwStyle = LVS_ICON;
+			break;
+
+		case ID_VIEW_LIST:
+			dwStyle = LVS_LIST;
+			break;
+		}
+
+		// change the style; window will repaint automatically
+		if (dwStyle != -1)
+			pView->ModifyStyle(LVS_TYPEMASK, dwStyle);
+	}
+}
+
+void CMainFrame::OnConvertFile() 
+{
+	// TODO: Add your command handler code here
+	CConvertDlg oConvertDlg;
+	if(IDOK==oConvertDlg.DoModal())
+	{		
+		oTxtToHtml.ConvertFile(oConvertDlg.m_strSrcFile,oConvertDlg.m_strDestFile);
+	}
+}
+
+void CMainFrame::OnFontset() 
+{
+	// TODO: Add your command handler code here
+	oTxtToHtml.ModifyFont();
+}
+
+void CMainFrame::OnBgcolor() 
+{
+	// TODO: Add your command handler code here
+	oTxtToHtml.ModifyBGColor();
+	
+}
+
+void CMainFrame::AddLog(CString szMsg, int iType)
+{
+	CWnd* pWnd = m_wndRSplitter.GetPane(1, 0);
+	CLogView* pLogView = DYNAMIC_DOWNCAST(CLogView, pWnd);
+	pLogView->Add(szMsg,0);
+}
+
+void CMainFrame::OnConvertdir() 
+{
+	CConvertDirDlg oConvertDirDlg;
+	if(IDOK==oConvertDirDlg.DoModal())
+	{		
+		oTxtToHtml.ConvertDir(oConvertDirDlg.m_strSrcDir,oConvertDirDlg.m_strDestDir);
+	}
+	
+}
+
+CTxt2HtmlView* CMainFrame::GetFileView()
+{
+	CWnd* pWnd = m_wndRSplitter.GetPane(0, 0);
+	CTxt2HtmlView* pFileView = DYNAMIC_DOWNCAST(CTxt2HtmlView, pWnd);
+	return pFileView;
+}

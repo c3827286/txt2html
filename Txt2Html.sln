@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Txt2Html", "Txt2Html.vcproj", "{DA1A04FA-33DB-446E-B2EF-609C4FAB1DB5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Txt2HtmlSetup", "..\Txt2HtmlSetup\Txt2HtmlSetup.vdproj", "{8843D5D4-34AF-400A-8E3B-E2A2229905DC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{DA1A04FA-33DB-446E-B2EF-609C4FAB1DB5}.Debug.ActiveCfg = Debug|Win32
+		{DA1A04FA-33DB-446E-B2EF-609C4FAB1DB5}.Debug.Build.0 = Debug|Win32
+		{DA1A04FA-33DB-446E-B2EF-609C4FAB1DB5}.Release.ActiveCfg = Release|Win32
+		{DA1A04FA-33DB-446E-B2EF-609C4FAB1DB5}.Release.Build.0 = Release|Win32
+		{8843D5D4-34AF-400A-8E3B-E2A2229905DC}.Debug.ActiveCfg = Debug
+		{8843D5D4-34AF-400A-8E3B-E2A2229905DC}.Release.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
